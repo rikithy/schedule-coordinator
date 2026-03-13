@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Schedule {
+  id              String        @id @default(uuid())
+  title           String
+  description     String?
+  startDate       DateTime
+  endDate         DateTime
+  durationMinutes Int
+  organizerName   String
+  organizerEmail  String?
+  status          String        @default("open") // open | finalized
+  finalizedStart  DateTime?
+  finalizedEnd    DateTime?
+  createdAt       DateTime      @default(now())
+
+  participants    Participant[]
+}
+
+model Participant {
+  id                String              @id @default(uuid())
+  scheduleId        String
+  schedule          Schedule            @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  name              String
+  email             String?
+  token             String
+  googleAccessToken String?
+  googleRefreshToken String?
+  responded         Boolean             @default(false)
+  inputMethod       String?             // 'calendar' | 'manual'
+  createdAt         DateTime            @default(now())
+
+  availability      AvailabilityBlock[]
+}
+
+model AvailabilityBlock {
+  id            String      @id @default(uuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  start         DateTime
+  end           DateTime
+  type          String      @default("busy") // busy
+}
