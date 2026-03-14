@@ -198,37 +198,48 @@ app.get('/api/schedules/:id/participants', async (req, res) => {
 
 // Send reminder (sends email)
 app.post('/api/schedules/:id/participants/:pid/remind', async (req, res) => {
+  console.log('>>> [DEBUG] Remind route accessed!');
+  console.log('>>> ID:', req.params.id, 'PID:', req.params.pid);
+
   try {
     const participant = await prisma.participant.findFirst({
       where: { id: req.params.pid, scheduleId: req.params.id },
       include: { schedule: true }
     });
-    if (!participant) return res.status(404).json({ error: 'Participant not found' });
-    
-    if (!participant.email) {
-      return res.status(400).json({ error: 'Participant has no email address configured' });
+
+    if (!participant) {
+      console.error('>>> [DEBUG] Participant NOT FOUND in database');
+      return res.status(404).json({ error: 'Participant not found' });
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const respondLink = `${frontendUrl}/respond/${participant.schedule.id}/${participant.id}`;
-    
-    const emailContent = `
-      <p>${participant.name}さん、こんにちは。</p>
-      <p>「<strong>${participant.schedule.title}</strong>」のスケジュール調整のリマインダーです。</p>
-      <p>まだ回答がお済みでないようです。以下のリンクから空き時間をご入力ください：</p>
-      <p><a href="${respondLink}">${respondLink}</a></p>
-    `;
+    console.log('>>> [DEBUG] Found participant:', participant.name, 'Email:', participant.email);
 
-    await sendEmail({
+    // email.jsの関数を呼び出す
+    console.log('>>> [DEBUG] Calling sendEmail function now...');
+    const emailResult = await sendEmail({
       to: participant.email,
       subject: `[リマインド] 【Schedule Sync】スケジュール回答のお願い: ${participant.schedule.title}`,
-      html: emailContent,
-      text: `${participant.name}さん\n「${participant.schedule.title}」のスケジュール回答のお願い\n以下のリンクから回答してください：\n${respondLink}`
+      html: `
+        <h2>スケジュール回答のリマインド</h2>
+        <p>${participant.name}様</p>
+        <p>「${participant.schedule.title}」への回答がまだ完了していないようです。</p>
+        <p>以下のURLより、ご都合の良い日時をご入力ください。</p>
+        <a href="${process.env.FRONTEND_URL}/respond/${participant.id}">${process.env.FRONTEND_URL}/respond/${participant.id}</a>
+      `,
+      text: `
+        スケジュール回答のリマインド
+        ${participant.name}様
+        「${participant.schedule.title}」への回答がまだ完了していないようです。
+        以下のURLより、ご都合の良い日時をご入力ください。
+        ${process.env.FRONTEND_URL}/respond/${participant.id}
+      `
     });
 
-    res.json({ success: true, message: `Reminder sent to ${participant.name} (${participant.email})` });
+    console.log('>>> [DEBUG] sendEmail function returned result:', emailResult);
+
+    res.json({ success: true, message: `Reminder sent to ${participant.name}` });
   } catch (err) {
-    console.error(err);
+    console.error('>>> [DEBUG] CRITICAL ERROR in remind route:', err);
     res.status(500).json({ error: 'Failed to send reminder' });
   }
 });
