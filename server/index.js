@@ -4,6 +4,13 @@ const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
+
+// ★ここから追加：すべてのリクエストを強制的にログに出す「監視カメラ」
+app.use((req, res, next) => {
+  console.log(`[GLOBAL LOG] ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  next();
+});
+// ★ここまで追加
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({
