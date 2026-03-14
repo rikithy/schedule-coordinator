@@ -22,6 +22,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
     return false;
   }
 
+  
   try {
     // GASのURLに向かってPOSTリクエストを送信
     const response = await fetch(gasUrl, {
