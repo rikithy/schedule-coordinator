@@ -4,13 +4,6 @@ const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-
-// ★ここから追加：すべてのリクエストを強制的にログに出す「監視カメラ」
-app.use((req, res, next) => {
-  console.log(`[GLOBAL LOG] ${req.method} ${req.url} - ${new Date().toISOString()}`);
-  next();
-});
-// ★ここまで追加
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({
@@ -205,9 +198,6 @@ app.get('/api/schedules/:id/participants', async (req, res) => {
 
 // Send reminder (sends email)
 app.post('/api/schedules/:id/participants/:pid/remind', async (req, res) => {
-  console.log('>>> [DEBUG] Remind route accessed!');
-  console.log('>>> ID:', req.params.id, 'PID:', req.params.pid);
-
   try {
     const participant = await prisma.participant.findFirst({
       where: { id: req.params.pid, scheduleId: req.params.id },
@@ -215,14 +205,10 @@ app.post('/api/schedules/:id/participants/:pid/remind', async (req, res) => {
     });
 
     if (!participant) {
-      console.error('>>> [DEBUG] Participant NOT FOUND in database');
       return res.status(404).json({ error: 'Participant not found' });
     }
 
-    console.log('>>> [DEBUG] Found participant:', participant.name, 'Email:', participant.email);
-
     // email.jsの関数を呼び出す
-    console.log('>>> [DEBUG] Calling sendEmail function now...');
     const emailResult = await sendEmail({
       to: participant.email,
       subject: `[リマインド] 【Schedule Sync】スケジュール回答のお願い: ${participant.schedule.title}`,
@@ -241,6 +227,13 @@ app.post('/api/schedules/:id/participants/:pid/remind', async (req, res) => {
         ${process.env.FRONTEND_URL}/respond/${participant.id}
       `
     });
+
+    res.json({ success: true, message: `Reminder sent to ${participant.name}` });
+  } catch (err) {
+    console.error('Error in remind route:', err);
+    res.status(500).json({ error: 'Failed to send reminder' });
+  }
+});
 
     console.log('>>> [DEBUG] sendEmail function returned result:', emailResult);
 
