@@ -1,36 +1,8 @@
-const nodemailer = require('nodemailer');
-
-// Create a reusable transporter object using the default SMTP transport
-const createTransporter = async () => {
-  // If production SMTP credentials are provided, use them
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT || 587,
-      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-  }
-
-  // Otherwise, use Ethereal Email for safe local testing
-  console.log('No SMTP credentials found in environment. Falling back to Ethereal Email for testing.');
-  const testAccount = await nodemailer.createTestAccount();
-  return nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: testAccount.user, // generated ethereal user
-      pass: testAccount.pass, // generated ethereal password
-    },
-  });
-};
+// nodemailer はもう使いません
+// const nodemailer = require('nodemailer');
 
 /**
- * Sends an email using the configured transporter.
+ * Sends an email using the Google Apps Script Web App.
  * @param {string} to - Recipient email address
  * @param {string} subject - Email subject
  * @param {string} text - Plain text body
@@ -42,26 +14,40 @@ const sendEmail = async ({ to, subject, text, html }) => {
     return false;
   }
 
+  // GASのウェブアプリURLを環境変数から取得
+  const gasUrl = process.env.GAS_MAIL_API_URL;
+  
+  if (!gasUrl) {
+    console.error('Error: GAS_MAIL_API_URL is not set in environment variables.');
+    return false;
+  }
+
   try {
-    const transporter = await createTransporter();
-    
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"Schedule Sync" <noreply@schedulesync.app>', // sender address
-      to, // list of receivers
-      subject, // Subject line
-      text, // plain text body
-      html, // html body
+    // GASのURLに向かってPOSTリクエストを送信
+    const response = await fetch(gasUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to,
+        subject,
+        text,
+        html,
+      }),
     });
 
-    console.log('Message sent: %s', info.messageId);
-    
-    // If using Ethereal, log the preview URL specifically so the developer can see the sent email
-    if (info.messageId && nodemailer.getTestMessageUrl(info)) {
-      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+    const result = await response.json();
+
+    if (result.success) {
+      console.log('Message sent via GAS successfully to:', to);
+      return true;
+    } else {
+      console.error('GAS returned an error:', result.error);
+      return false;
     }
-    return true;
   } catch (err) {
-    console.error('Error sending email:', err);
+    console.error('Error connecting to GAS:', err);
     return false;
   }
 };
