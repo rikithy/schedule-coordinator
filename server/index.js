@@ -208,7 +208,6 @@ app.post('/api/schedules/:id/participants/:pid/remind', async (req, res) => {
       return res.status(404).json({ error: 'Participant not found' });
     }
 
-    // email.jsの関数を呼び出す
     const emailResult = await sendEmail({
       to: participant.email,
       subject: `[リマインド] 【Schedule Sync】スケジュール回答のお願い: ${participant.schedule.title}`,
@@ -233,16 +232,7 @@ app.post('/api/schedules/:id/participants/:pid/remind', async (req, res) => {
     console.error('Error in remind route:', err);
     res.status(500).json({ error: 'Failed to send reminder' });
   }
-});
-
-    console.log('>>> [DEBUG] sendEmail function returned result:', emailResult);
-
-    res.json({ success: true, message: `Reminder sent to ${participant.name}` });
-  } catch (err) {
-    console.error('>>> [DEBUG] CRITICAL ERROR in remind route:', err);
-    res.status(500).json({ error: 'Failed to send reminder' });
-  }
-});
+}); // ← この }); が漏れていないか特に注意してください！
 
 // Send reminder to all unresponded
 app.post('/api/schedules/:id/remind-all', async (req, res) => {
