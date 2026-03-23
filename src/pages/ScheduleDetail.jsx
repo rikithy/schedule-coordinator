@@ -98,7 +98,7 @@ export default function ScheduleDetail() {
           }
           const last = merged[merged.length - 1];
           const isConsecutive = new Date(last.end).getTime() === new Date(slot.start).getTime();
-          const isSamePercentage = last.percentage === slot.percentage;
+
           
           const ap1 = (last.availableParticipants || []).map(p => p.id || p.name).sort().join(',');
           const ap2 = (slot.availableParticipants || []).map(p => p.id || p.name).sort().join(',');
@@ -113,6 +113,8 @@ export default function ScheduleDetail() {
             merged.push({ ...slot, originalSlots: [slot] });
           }
         }
+        // パーセンテージ降順→日時昇順でソート（100%スロットが常に先頭）
+        merged.sort((a, b) => (b.percentage ?? 0) - (a.percentage ?? 0) || new Date(a.start).getTime() - new Date(b.start).getTime());
       } catch (mergeErr) {
         console.error('Merge error:', mergeErr);
         merged = rawSlots.map(s => ({ ...s, originalSlots: [s] }));
