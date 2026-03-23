@@ -87,33 +87,41 @@ export default function ScheduleDetail() {
     try {
       const result = await api.getSlots(id);
       const rawSlots = result.slots || [];
-      const sorted = [...rawSlots].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
       
-      const merged = [];
-      for (const slot of sorted) {
-        if (merged.length === 0) {
-          merged.push({ ...slot, originalSlots: [slot] });
-          continue;
+      let merged = [];
+      try {
+        const sorted = [...rawSlots].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+        for (const slot of sorted) {
+          if (merged.length === 0) {
+            merged.push({ ...slot, originalSlots: [slot] });
+            continue;
+          }
+          const last = merged[merged.length - 1];
+          const isConsecutive = new Date(last.end).getTime() === new Date(slot.start).getTime();
+          const isSamePercentage = last.percentage === slot.percentage;
+          
+          const ap1 = (last.availableParticipants || []).map(p => p.id || p.name).sort().join(',');
+          const ap2 = (slot.availableParticipants || []).map(p => p.id || p.name).sort().join(',');
+          const up1 = (last.unavailableParticipants || []).map(p => p.id || p.name).sort().join(',');
+          const up2 = (slot.unavailableParticipants || []).map(p => p.id || p.name).sort().join(',');
+          const isSameParticipants = (ap1 === ap2 && up1 === up2);
+          
+          if (isConsecutive && isSamePercentage && isSameParticipants) {
+            last.end = slot.end;
+            last.originalSlots.push(slot);
+          } else {
+            merged.push({ ...slot, originalSlots: [slot] });
+          }
         }
-        const last = merged[merged.length - 1];
-        const isConsecutive = new Date(last.end).getTime() === new Date(slot.start).getTime();
-        const isSamePercentage = last.percentage === slot.percentage;
-        const ap1 = last.availableParticipants.map(p => p.id).sort().join(',');
-        const ap2 = slot.availableParticipants.map(p => p.id).sort().join(',');
-        const up1 = last.unavailableParticipants.map(p => p.id).sort().join(',');
-        const up2 = slot.unavailableParticipants.map(p => p.id).sort().join(',');
-        const isSameParticipants = (ap1 === ap2 && up1 === up2);
-        
-        if (isConsecutive && isSamePercentage && isSameParticipants) {
-          last.end = slot.end;
-          last.originalSlots.push(slot);
-        } else {
-          merged.push({ ...slot, originalSlots: [slot] });
-        }
+      } catch (mergeErr) {
+        console.error('Merge error:', mergeErr);
+        merged = rawSlots.map(s => ({ ...s, originalSlots: [s] }));
       }
+      
       setSlots(merged);
       setSlotSelections({});
     } catch (err) {
+      console.error(err);
       showToast('スロット検索に失敗しました', 'error');
     } finally {
       setSlotsLoading(false);
@@ -478,10 +486,10 @@ export default function ScheduleDetail() {
                         />
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                        {slot.availableParticipants.map(p => p.name).join(', ')}
-                        {slot.unavailableParticipants.length > 0 && (
+                        {(slot.availableParticipants || []).map(p => p.name).join(', ')}
+                        {slot.unavailableParticipants && slot.unavailableParticipants.length > 0 && (
                           <span style={{ color: 'var(--danger-400)', marginLeft: 8 }}>
-                            ✕ {slot.unavailableParticipants.map(p => p.name).join(', ')}
+                            ✕ {(slot.unavailableParticipants || []).map(p => p.name).join(', ')}
                           </span>
                         )}
                       </div>
