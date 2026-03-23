@@ -106,7 +106,7 @@ export default function ScheduleDetail() {
           const up2 = (slot.unavailableParticipants || []).map(p => p.id || p.name).sort().join(',');
           const isSameParticipants = (ap1 === ap2 && up1 === up2);
           
-          if (isConsecutive && isSamePercentage && isSameParticipants) {
+          if (isConsecutive && isSameParticipants) {
             last.end = slot.end;
             last.originalSlots.push(slot);
           } else {
@@ -426,7 +426,7 @@ export default function ScheduleDetail() {
             </div>
           ) : (
             <div className="slot-list">
-              {slots.filter(s => s.percentage > 0).slice(0, 50).map((slot, i) => {
+              {slots.filter(s => s.percentage == null || s.percentage > 0).slice(0, 50).map((slot, i) => {
                 const subSel = slotSelections[i] !== undefined ? slotSelections[i] : 'all';
                 let chosenSlot = { start: slot.start, end: slot.end };
                 if (subSel !== 'all' && slot.originalSlots && slot.originalSlots[subSel]) {
