@@ -40,6 +40,7 @@ export default function ScheduleDetail() {
   const [slots, setSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [slotSelections, setSlotSelections] = useState({});
   const [vizData, setVizData] = useState(null);
   const [vizLoading, setVizLoading] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
@@ -85,7 +86,33 @@ export default function ScheduleDetail() {
     setSlotsLoading(true);
     try {
       const result = await api.getSlots(id);
-      setSlots(result.slots || []);
+      const rawSlots = result.slots || [];
+      const sorted = [...rawSlots].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+      
+      const merged = [];
+      for (const slot of sorted) {
+        if (merged.length === 0) {
+          merged.push({ ...slot, originalSlots: [slot] });
+          continue;
+        }
+        const last = merged[merged.length - 1];
+        const isConsecutive = new Date(last.end).getTime() === new Date(slot.start).getTime();
+        const isSamePercentage = last.percentage === slot.percentage;
+        const ap1 = last.availableParticipants.map(p => p.id).sort().join(',');
+        const ap2 = slot.availableParticipants.map(p => p.id).sort().join(',');
+        const up1 = last.unavailableParticipants.map(p => p.id).sort().join(',');
+        const up2 = slot.unavailableParticipants.map(p => p.id).sort().join(',');
+        const isSameParticipants = (ap1 === ap2 && up1 === up2);
+        
+        if (isConsecutive && isSamePercentage && isSameParticipants) {
+          last.end = slot.end;
+          last.originalSlots.push(slot);
+        } else {
+          merged.push({ ...slot, originalSlots: [slot] });
+        }
+      }
+      setSlots(merged);
+      setSlotSelections({});
     } catch (err) {
       showToast('スロット検索に失敗しました', 'error');
     } finally {
@@ -392,20 +419,56 @@ export default function ScheduleDetail() {
           ) : (
             <div className="slot-list">
               {slots.filter(s => s.percentage > 0).slice(0, 50).map((slot, i) => {
-                const isSelected = selectedSlot && selectedSlot.start === slot.start;
+                const subSel = slotSelections[i] !== undefined ? slotSelections[i] : 'all';
+                let chosenSlot = { start: slot.start, end: slot.end };
+                if (subSel !== 'all' && slot.originalSlots && slot.originalSlots[subSel]) {
+                  chosenSlot = slot.originalSlots[subSel];
+                }
+                const isSelected = selectedSlot && selectedSlot.start === chosenSlot.start && selectedSlot.end === chosenSlot.end;
+
                 return (
                   <div
                     key={i}
                     className={`slot-item ${isSelected ? 'selected' : ''}`}
-                    onClick={() => setSelectedSlot({ start: slot.start, end: slot.end })}
+                    onClick={() => setSelectedSlot({ start: chosenSlot.start, end: chosenSlot.end })}
                   >
                     <div>
                       <div className="slot-time">
                         {formatTimeOnly(slot.start)} 〜 {formatTimeOnly(slot.end)}
+                        {slot.originalSlots && slot.originalSlots.length > 1 && (
+                          <span style={{ fontSize: '0.75rem', marginLeft: '6px', color: 'var(--text-muted)' }}>
+                            ({slot.originalSlots.length}時間連続)
+                          </span>
+                        )}
                       </div>
                       <div className="slot-date">
                         {new Date(slot.start).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
                       </div>
+                      {slot.originalSlots && slot.originalSlots.length > 1 && isSelected && (
+                        <div className="mt-2" onClick={e => e.stopPropagation()}>
+                          <label className="text-sm" style={{ display: 'block', marginBottom: '2px', color: 'var(--text-secondary)' }}>確定する時間枠:</label>
+                          <select 
+                            className="form-input" 
+                            style={{ padding: '0.25rem', fontSize: '0.875rem', width: 'auto' }}
+                            value={subSel}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setSlotSelections(prev => ({ ...prev, [i]: val }));
+                              if (val === 'all') {
+                                setSelectedSlot({ start: slot.start, end: slot.end });
+                              } else {
+                                const os = slot.originalSlots[Number(val)];
+                                setSelectedSlot({ start: os.start, end: os.end });
+                              }
+                            }}
+                          >
+                            <option value="all">枠全体 ({formatTimeOnly(slot.start)}〜{formatTimeOnly(slot.end)})</option>
+                            {slot.originalSlots.map((os, idx) => (
+                              <option key={idx} value={idx}>{formatTimeOnly(os.start)} 〜 {formatTimeOnly(os.end)}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <div className="slot-bar-container">
