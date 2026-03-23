@@ -97,7 +97,7 @@ export default function ScheduleDetail() {
             continue;
           }
           const last = merged[merged.length - 1];
-          const isConsecutive = new Date(last.end).getTime() === new Date(slot.start).getTime();
+          const isConsecutive = new Date(slot.start).getTime() <= new Date(last.end).getTime();
 
           
           const ap1 = (last.availableParticipants || []).map(p => p.id || p.name).sort().join(',');
