@@ -282,11 +282,11 @@ export default function ScheduleDetail() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label">候補開始日</label>
-                <input className="form-input" type="date" value={editForm.startDate} onChange={e => setEditForm(f => ({ ...f, startDate: e.target.value }))} />
+                <input className="form-input" type="date" value={editForm.startDate} onChange={e => setEditForm(f => ({ ...f, startDate: e.target.value }))} max="9999-12-31" />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label">候補終了日</label>
-                <input className="form-input" type="date" value={editForm.endDate} onChange={e => setEditForm(f => ({ ...f, endDate: e.target.value }))} />
+                <input className="form-input" type="date" value={editForm.endDate} onChange={e => setEditForm(f => ({ ...f, endDate: e.target.value }))} max="9999-12-31" />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label">所要時間（分）</label>

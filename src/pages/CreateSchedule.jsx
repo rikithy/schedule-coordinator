@@ -75,6 +75,7 @@ export default function CreateSchedule() {
                 name="startDate"
                 value={form.startDate}
                 onChange={handleChange}
+                max="9999-12-31"
                 required
               />
             </div>
@@ -86,6 +87,7 @@ export default function CreateSchedule() {
                 name="endDate"
                 value={form.endDate}
                 onChange={handleChange}
+                max="9999-12-31"
                 required
               />
             </div>
