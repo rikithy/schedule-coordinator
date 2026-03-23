@@ -448,21 +448,24 @@ export default function ScheduleDetail() {
                     <div>
                       <div className="slot-time">
                         {formatTimeOnly(slot.start)} 〜 {formatTimeOnly(slot.end)}
-                        {slot.originalSlots && slot.originalSlots.length > 1 && (
-                          <span style={{ fontSize: '0.75rem', marginLeft: '6px', color: 'var(--text-muted)' }}>
-                            ({slot.originalSlots.length}時間連続)
-                          </span>
-                        )}
+                        {slot.originalSlots && slot.originalSlots.length > 1 && (() => {
+                          const hours = Math.round((new Date(slot.end) - new Date(slot.start)) / 3600000);
+                          return (
+                            <span style={{ fontSize: '0.75rem', marginLeft: '6px', padding: '1px 6px', borderRadius: '999px', background: 'rgba(99,102,241,0.15)', color: 'var(--primary-400)', fontWeight: 600 }}>
+                              最大{hours}時間枠
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div className="slot-date">
                         {new Date(slot.start).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
                       </div>
                       {slot.originalSlots && slot.originalSlots.length > 1 && isSelected && (
                         <div className="mt-2" onClick={e => e.stopPropagation()}>
-                          <label className="text-sm" style={{ display: 'block', marginBottom: '2px', color: 'var(--text-secondary)' }}>確定する時間枠:</label>
+                          <label className="text-sm" style={{ display: 'block', marginBottom: '4px', color: 'var(--text-secondary)', fontWeight: 600 }}>この枠内の時間を選択:</label>
                           <select 
                             className="form-input" 
-                            style={{ padding: '0.25rem', fontSize: '0.875rem', width: 'auto' }}
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.875rem', width: '100%' }}
                             value={subSel}
                             onChange={e => {
                               const val = e.target.value;
@@ -475,10 +478,16 @@ export default function ScheduleDetail() {
                               }
                             }}
                           >
-                            <option value="all">枠全体 ({formatTimeOnly(slot.start)}〜{formatTimeOnly(slot.end)})</option>
-                            {slot.originalSlots.map((os, idx) => (
-                              <option key={idx} value={idx}>{formatTimeOnly(os.start)} 〜 {formatTimeOnly(os.end)}</option>
-                            ))}
+                            {(() => {
+                              const hours = Math.round((new Date(slot.end) - new Date(slot.start)) / 3600000);
+                              return <option value="all">🕐 枠全体（最大{hours}時間）{formatTimeOnly(slot.start)}〜{formatTimeOnly(slot.end)}</option>;
+                            })()}
+                            {slot.originalSlots.map((os, idx) => {
+                              const durMin = Math.round((new Date(os.end) - new Date(os.start)) / 60000);
+                              return (
+                                <option key={idx} value={idx}>{formatTimeOnly(os.start)} 〜 {formatTimeOnly(os.end)}（{durMin}分）</option>
+                              );
+                            })}
                           </select>
                         </div>
                       )}
