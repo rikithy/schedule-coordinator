@@ -9,7 +9,7 @@ export default function CreateSchedule() {
     description: '',
     startDate: '',
     endDate: '',
-    durationMinutes: 60,
+    durationHours: 1,
     organizerName: '',
     organizerEmail: '',
   });
@@ -23,7 +23,9 @@ export default function CreateSchedule() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const schedule = await api.createSchedule(form);
+      const submitData = { ...form, durationMinutes: Math.round(form.durationHours * 60) };
+      delete submitData.durationHours;
+      const schedule = await api.createSchedule(submitData);
       navigate(`/schedule/${schedule.id}`);
     } catch (err) {
       alert('作成に失敗しました: ' + err.message);
@@ -94,18 +96,19 @@ export default function CreateSchedule() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">所要時間（分） *</label>
+            <label className="form-label">所要時間（時間） *</label>
             <input
               className="form-input"
               type="number"
-              name="durationMinutes"
+              name="durationHours"
               min="1"
-              placeholder="例: 60"
-              value={form.durationMinutes}
+              step="1"
+              placeholder="例: 2"
+              value={form.durationHours}
               onChange={handleChange}
               required
             />
-            <span className="text-sm text-muted">分単位で入力してください（例: 90 = 1時間30分）</span>
+            <span className="text-sm text-muted">時間単位で入力してください（例: 2 = 2時間）</span>
           </div>
 
           <div className="form-row">

@@ -48,7 +48,7 @@ export default function ScheduleDetail() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ startDate: '', endDate: '', durationMinutes: 60 });
+  const [editForm, setEditForm] = useState({ startDate: '', endDate: '', durationHours: 1 });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -204,7 +204,7 @@ export default function ScheduleDetail() {
         <div>
           <h1 className="section-title">{schedule.title}</h1>
           <p className="section-subtitle">
-            {schedule.description || `${new Date(schedule.startDate).toLocaleDateString('ja-JP')} 〜 ${new Date(schedule.endDate).toLocaleDateString('ja-JP')} · ${schedule.durationMinutes}分`}
+            {schedule.description || `${new Date(schedule.startDate).toLocaleDateString('ja-JP')} 〜 ${new Date(schedule.endDate).toLocaleDateString('ja-JP')} · ${Math.round(schedule.durationMinutes / 60)}時間`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -254,7 +254,7 @@ export default function ScheduleDetail() {
                 setEditForm({
                   startDate: schedule.startDate,
                   endDate: schedule.endDate,
-                  durationMinutes: schedule.durationMinutes,
+                  durationHours: Math.round(schedule.durationMinutes / 60),
                 });
               }}>✏️ 編集</button>
             )}
@@ -263,7 +263,9 @@ export default function ScheduleDetail() {
                 <button className="btn btn-primary btn-sm" disabled={saving} onClick={async () => {
                   setSaving(true);
                   try {
-                    await api.updateSchedule(id, editForm);
+                    const submitEditData = { ...editForm, durationMinutes: Math.round(editForm.durationHours * 60) };
+                    delete submitEditData.durationHours;
+                    await api.updateSchedule(id, submitEditData);
                     showToast('スケジュールを更新しました');
                     setEditing(false);
                     reload();
@@ -289,8 +291,8 @@ export default function ScheduleDetail() {
                 <input className="form-input" type="date" value={editForm.endDate} onChange={e => setEditForm(f => ({ ...f, endDate: e.target.value }))} max="9999-12-31" />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">所要時間（分）</label>
-                <input className="form-input" type="number" min="1" value={editForm.durationMinutes} onChange={e => setEditForm(f => ({ ...f, durationMinutes: e.target.value }))} />
+                <label className="form-label">所要時間（時間）</label>
+                <input className="form-input" type="number" min="1" step="1" value={editForm.durationHours} onChange={e => setEditForm(f => ({ ...f, durationHours: e.target.value }))} />
               </div>
             </div>
           ) : (
@@ -303,7 +305,7 @@ export default function ScheduleDetail() {
               </div>
               <div>
                 <div className="form-label">所要時間</div>
-                <div style={{ fontSize: '1.125rem', fontWeight: 600 }}>{schedule.durationMinutes}分</div>
+                <div style={{ fontSize: '1.125rem', fontWeight: 600 }}>{Math.round(schedule.durationMinutes / 60)}時間</div>
               </div>
               <div>
                 <div className="form-label">参加者</div>

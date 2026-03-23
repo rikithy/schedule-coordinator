@@ -329,7 +329,7 @@ export default function RespondPage() {
         <div>
           <h1 className="section-title">{schedule.title}</h1>
           <p className="section-subtitle">
-            {participant.name} さんの回答 · {schedule.durationMinutes}分の予定を調整中
+            {participant.name} さんの回答 · {Math.round(schedule.durationMinutes / 60)}時間の予定を調整中
           </p>
         </div>
       </div>

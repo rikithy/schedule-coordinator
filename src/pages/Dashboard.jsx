@@ -72,7 +72,7 @@ export default function Dashboard() {
                 <div className="schedule-card-title">{schedule.title}</div>
                 <div className="schedule-card-meta">
                   <span>📆 {formatDate(schedule.startDate)} 〜 {formatDate(schedule.endDate)}</span>
-                  <span>⏱ {schedule.durationMinutes}分</span>
+                  <span>⏱ {Math.round(schedule.durationMinutes / 60)}時間</span>
                   <span>👥 {schedule.respondedCount}/{schedule.participantCount} 回答済み</span>
                   <span className={`badge ${schedule.status === 'finalized' ? 'badge-success' : 'badge-info'}`}>
                     {schedule.status === 'finalized' ? '確定済み' : '募集中'}
