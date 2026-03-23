@@ -416,17 +416,20 @@ export default function ScheduleDetail() {
             </div>
           </div>
 
-          {slots.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">🔍</div>
-              <div className="empty-state-title">
-                {slotsLoading ? '検索中...' : '対象のスロットがありません'}
+          {(() => {
+            const visibleSlots = slots.filter(s => s.percentage == null || s.percentage > 0).slice(0, 50);
+            if (slots.length === 0 || visibleSlots.length === 0) return (
+              <div className="empty-state">
+                <div className="empty-state-icon">🔍</div>
+                <div className="empty-state-title">
+                  {slotsLoading ? '検索中...' : '対象のスロットがありません'}
+                </div>
+                <p className="empty-state-desc">参加者の回答が集まってから再検索してください</p>
               </div>
-              <p className="empty-state-desc">参加者の回答が集まってから再検索してください</p>
-            </div>
-          ) : (
+            );
+            return (
             <div className="slot-list">
-              {slots.filter(s => s.percentage == null || s.percentage > 0).slice(0, 50).map((slot, i) => {
+              {visibleSlots.map((slot, i) => {
                 const subSel = slotSelections[i] !== undefined ? slotSelections[i] : 'all';
                 let chosenSlot = { start: slot.start, end: slot.end };
                 if (subSel !== 'all' && slot.originalSlots && slot.originalSlots[subSel]) {
@@ -501,7 +504,7 @@ export default function ScheduleDetail() {
                 );
               })}
             </div>
-          )}
+          );})()}
         </div>
       )}
 
