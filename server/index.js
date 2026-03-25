@@ -196,6 +196,27 @@ app.get('/api/schedules/:id/participants', async (req, res) => {
   }
 });
 
+// Delete a participant
+app.delete('/api/schedules/:id/participants/:pid', async (req, res) => {
+  try {
+    const deleted = await prisma.participant.deleteMany({
+      where: {
+        id: req.params.pid,
+        scheduleId: req.params.id
+      }
+    });
+
+    if (deleted.count === 0) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    res.json({ success: true, message: 'Participant deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting participant:', err);
+    res.status(500).json({ error: 'Failed to delete participant' });
+  }
+});
+
 // Send reminder (sends email)
 app.post('/api/schedules/:id/participants/:pid/remind', async (req, res) => {
   try {

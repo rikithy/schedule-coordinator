@@ -48,6 +48,7 @@ export default function ScheduleDetail() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editForm, setEditForm] = useState({ startDate: '', endDate: '', durationHours: 1 });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -154,6 +155,19 @@ export default function ScheduleDetail() {
     }
   };
 
+  const handleDeleteParticipant = async (participantId, participantName) => {
+    if (!window.confirm(`${participantName} さんを削除しますか？`)) return;
+    try {
+      await api.deleteParticipant(id, participantId);
+      showToast(`${participantName} さんを削除しました`);
+      setIsDeleting(false);
+      reload();
+    } catch (err) {
+      console.error(err);
+      showToast('削除に失敗しました', 'error');
+    }
+  };
+
   const handleRemind = async (pid, name) => {
     try {
       await api.remindParticipant(id, pid);
@@ -213,7 +227,14 @@ export default function ScheduleDetail() {
               ＋ 参加者を追加
             </button>
           )}
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>← 戻る</button>
+          {schedule.status === 'open' && (
+            <button className={`btn btn-sm ${isDeleting ? 'btn-danger' : 'btn-ghost'}`} onClick={() => {
+              setIsDeleting(!isDeleting);
+              setTab('participants'); // 削除モード時は参加者タブへ
+            }}>
+              {isDeleting ? 'キャンセル' : '🗑️ 参加者を削除'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -391,9 +412,14 @@ export default function ScheduleDetail() {
                   <span className={`badge ${p.responded ? 'badge-success' : 'badge-warning'}`}>
                     {p.responded ? '回答済み' : '未回答'}
                   </span>
-                  {!p.responded && (
+                  {!p.responded && !isDeleting && (
                     <button className="btn btn-ghost btn-sm" onClick={() => handleRemind(p.id, p.name)}>
                       📧
+                    </button>
+                  )}
+                  {isDeleting && (
+                    <button className="btn btn-danger btn-sm" onClick={() => handleDeleteParticipant(p.id, p.name)}>
+                      削除
                     </button>
                   )}
                 </div>

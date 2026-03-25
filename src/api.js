@@ -24,6 +24,7 @@ export const api = {
   // Participants
   getParticipants: (scheduleId) => request(`/schedules/${scheduleId}/participants`),
   addParticipant: (scheduleId, data) => request(`/schedules/${scheduleId}/participants`, { method: 'POST', body: JSON.stringify(data) }),
+  deleteParticipant: (scheduleId, pid) => request(`/schedules/${scheduleId}/participants/${pid}`, { method: 'DELETE' }),
   remindParticipant: (scheduleId, pid) => request(`/schedules/${scheduleId}/participants/${pid}/remind`, { method: 'POST' }),
   remindAll: (scheduleId) => request(`/schedules/${scheduleId}/remind-all`, { method: 'POST' }),
 
