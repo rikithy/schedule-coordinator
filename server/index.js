@@ -12,6 +12,11 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// スリープ防止用のヘルスチェックエンドポイント
+app.get('/api/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
